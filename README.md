@@ -2,7 +2,7 @@
 
 ![ResumeTracker Logo](/public/images/resume-scan.gif)
 
-ResumeTracker is a modern web application that helps job seekers optimize their resumes for specific job applications. Using advanced AI analysis, it provides detailed feedback on how well your resume matches job requirements and offers actionable suggestions for improvement.
+ResumeTracker is a modern web application that helps jobseekers optimize their resumes for specific job applications. Using advanced AI analysis, it provides detailed feedback on how well your resume matches job requirements and offers actionable suggestions for improvement.
 
 ## 🚀 Features
 
