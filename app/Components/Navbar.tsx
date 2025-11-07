@@ -30,6 +30,9 @@ const Navbar = () => {
             <Link to="/upload" className="ghost-button nav-link" onClick={closeMenu}>
                 Uploads
             </Link>
+            <Link to="/wipe" className="ghost-button nav-link" onClick={closeMenu}>
+                Manage
+            </Link>
         </>
     );
 

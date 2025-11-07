@@ -254,7 +254,7 @@ const WipeApp = () => {
                                 </button>
                             </div>
                         </div>
-                        <div className="max-h-[360px] overflow-y-auto rounded-2xl border border-white/60 bg-white/80">
+                        <div className="table-scroll max-h-[360px] overflow-y-auto rounded-2xl border border-white/60 bg-white/80">
                             <table className="min-w-full text-sm text-slate-600">
                                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
                                     <tr>
@@ -340,7 +340,7 @@ const WipeApp = () => {
                             onChange={(event) => setFilter(event.target.value)}
                         />
 
-                        <div className="max-h-[360px] overflow-y-auto rounded-2xl border border-white/60 bg-white/80">
+                        <div className="table-scroll max-h-[360px] overflow-y-auto rounded-2xl border border-white/60 bg-white/80">
                             <table className="min-w-full text-sm text-slate-600">
                                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
                                     <tr>

@@ -1,149 +1,108 @@
-# ResumeTracker - AI-Powered Resume Analysis Tool
+# Tracker
 
-![ResumeTracker Logo](/public/images/resume-scan.gif)
+Tracker is an AI-powered workspace for preparing job-ready resumes. It benchmarks a candidate�s resume against a target job description, generates an enhanced PDF, drafts a tailored application email, and is available as a public demo at https://tracker.chimaliro.com (Vercel).
 
-ResumeTracker is a modern web application that helps jobseekers optimize their resumes for specific job applications. Using advanced AI analysis, it provides detailed feedback on how well your resume matches job requirements and offers actionable suggestions for improvement.
+## Features
 
-## 🚀 Features
+- **ATS-grade analysis** � Scores overall readiness plus ATS, tone, content, structure, and skill alignment using Claude 3.7 Sonnet.
+- **Smart rewrite** � Produces a refreshed resume PDF that mirrors professional templates (one-click download).
+- **Application email** � Generates a short outreach email aligned with the job and resume summary.
+- **Managed storage** � Puter.js handles authentication, file storage, KV persistence, and AI access; `/wipe` exposes a full workspace management console.
+- **Responsive UI** � Modern desktop dashboard with mobile-first optimizations, glassmorphism styling, and accessible tables.
 
-- **AI-Powered Resume Analysis**: Get comprehensive feedback on your resume using Claude 3.7 Sonnet AI model
-- **ATS Compatibility Check**: Ensure your resume passes through Applicant Tracking Systems
-- **Job-Specific Optimization**: Tailor your resume analysis to specific job descriptions
-- **Detailed Feedback Categories**:
-  - Overall Score
-  - ATS Compatibility
-  - Tone and Style
-  - Content Quality
-  - Resume Structure
-  - Skills Alignment
-- **Visual Score Representation**: Easy-to-understand visual indicators of your resume's performance
-- **Secure Cloud Storage**: Your resumes and analysis results are securely stored
+## Stack
 
-## 📋 Prerequisites
+| Area              | Technology                              |
+| ----------------- | --------------------------------------- |
+| Frontend          | React 19, TypeScript, Vite              |
+| Routing           | React Router 7                          |
+| State             | Zustand                                 |
+| Styling           | PostCSS + Tailwind utilities / custom CSS |
+| File handling     | `react-dropzone`, `pdfjs-dist`, `pdf-lib` |
+| Cloud + AI        | Puter.js (auth, FS, KV, Claude access)  |
+| Hosting           | Vercel (demo)                           |
 
-- Node.js 20 or higher
-- npm or yarn
-- A Puter.js account for cloud storage and AI functionality
+## Prerequisites
 
-## 🔧 Installation
+- Node.js 20+
+- npm 10+ (or yarn/pnpm)
+- Puter.js account with API access
+
+## Getting Started
 
 ### Local Development
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/tracker.git
-   cd tracker
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Open your browser and navigate to `http://localhost:3000`
-
-### Docker Deployment
-
-1. Build the Docker image:
-   ```bash
-   docker build -t resumetracker .
-   ```
-
-2. Run the container:
-   ```bash
-   docker run -p 3000:3000 resumetracker
-   ```
-
-## 🔍 How It Works
-
-1. **Upload Your Resume**: Upload your resume in PDF format
-2. **Enter Job Details**: Provide the company name, job title, and job description
-3. **AI Analysis**: Our AI analyzes your resume against the job description
-4. **Review Feedback**: Get detailed feedback and suggestions for improvement
-5. **Implement Changes**: Use the actionable insights to optimize your resume
-
-## 🏗️ Architecture
-
-ResumeTracker is built with a modern tech stack:
-
-- **Frontend**: React 19 with TypeScript
-- **Routing**: React Router 7
-- **Styling**: TailwindCSS 4
-- **State Management**: Zustand
-- **File Handling**: react-dropzone, pdfjs-dist
-- **Cloud Services**: Puter.js for:
-  - Authentication
-  - File storage
-  - AI analysis (Claude 3.7 Sonnet)
-  - Key-value data storage
-
-### Data Flow
-
-1. User uploads a resume PDF and enters job details
-2. The PDF is uploaded to Puter's file system and converted to an image
-3. The AI analyzes the resume against the job description
-4. Analysis results are stored in Puter's key-value store
-5. Results are displayed to the user with detailed feedback
-
-## 📁 Project Structure
-
-```
-tracker/
-├── app/                  # Main application code
-│   ├── Components/       # React components
-│   ├── routes/           # Route components
-│   ├── app.css           # Global styles
-│   ├── root.tsx          # Root component
-│   └── routes.ts         # Route definitions
-├── constants/            # Application constants
-├── lib/                  # Utility functions
-│   ├── pdf2img.ts        # PDF to image conversion
-│   ├── puter.ts          # Puter.js integration
-│   └── utils.ts          # General utilities
-├── public/               # Static assets
-├── types/                # TypeScript type definitions
-├── Dockerfile            # Docker configuration
-└── package.json          # Project dependencies
+```bash
+git clone https://github.com/yourusername/tracker.git
+cd tracker
+npm install
+npm run dev
 ```
 
-## 🧪 Testing
+Open `http://localhost:5173` to use the app with hot reload.
 
-To run the tests:
+### Production Build
+
+```bash
+npm run build
+npm run start   # serves the React Router build output
+```
+
+### Docker
+
+```bash
+docker build -t tracker .
+docker run -p 3000:3000 tracker
+```
+
+## How It Works
+
+1. **Upload & context** � User provides a PDF resume plus company/job info.
+2. **Analysis** � Claude compares the resume to the job description and returns structured JSON feedback.
+3. **Rewrite** � The AI produces an updated resume outline; the app renders it into a polished PDF.
+4. **Email drafting** � A short application email is generated alongside the report.
+5. **Review** � Dashboard cards display scores, detailed tips, ATS insights, enhanced resume preview, and email text.
+
+## Key Routes & Components
+
+- `/` � Home dashboard listing prior scans with score indicators.
+- `/upload` � Guided workflow (drag/drop upload, stored resume reuse, status timeline).
+- `/resume/:id` � Full report (summary, ATS breakdown, details accordion, enhanced PDF, application email).
+- `/wipe` � Manage Puter storage/KV (file explorer, KV inspector, audit log).
+
+Notable components: `Summary`, `ATS`, `Details`, `EnhancedResume`, `ApplicationEmail`, `FileUploader`, `ResumeCard`, `Navbar`.
+
+## Testing & Quality
+
+Type safety is ensured with:
 
 ```bash
 npm run typecheck
 ```
 
-Note: This project uses TypeScript for type checking. Additional test suites may be added in the future.
+Additional unit/integration tests can be layered on top; this script currently runs React Router typegen plus `tsc`.
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1. Fork the repository.
+2. Create a branch: `git checkout -b feature/my-feature`.
+3. Commit changes: `git commit -m "Add feature"`.
+4. Push: `git push origin feature/my-feature`.
+5. Open a Pull Request describing your changes and testing steps.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Please run `npm run typecheck` before submitting PRs.
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+Tracker is distributed under the MIT License. See `LICENSE` for details.
 
-## 🙏 Acknowledgements
+## Acknowledgements
 
-- [React](https://reactjs.org/)
-- [React Router](https://reactrouter.com/)
-- [TailwindCSS](https://tailwindcss.com/)
-- [Zustand](https://github.com/pmndrs/zustand)
-- [Puter.js](https://puter.com/)
-- [Claude AI](https://www.anthropic.com/claude)
+- Puter.js for storage/auth/AI services.
+- Anthropic Claude 3.7 Sonnet for analysis and copy generation.
+- React, React Router, TailwindCSS, Zustand, pdf-lib, pdfjs-dist, react-dropzone for the front-end foundation.
+- Vercel for hosting the public demo.
 
 ---
 
-Built with ❤️ by [tinolinton] jsmastery course
+Built by Tinotenda Linton Machila.
