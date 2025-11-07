@@ -19,6 +19,7 @@ interface Resume {
         updatedAt: number;
         filename: string;
     };
+    applicationEmail?: ApplicationEmail;
 }
 
 type FeedbackTip = {
@@ -64,6 +65,13 @@ interface GeneratedResume {
     skills: string[];
     achievements: string[];
     callToAction?: string;
+}
+
+interface ApplicationEmail {
+    subject: string;
+    salutation?: string;
+    body: string;
+    closing?: string;
 }
 
 declare module "*.mjs?url" {

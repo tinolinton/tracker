@@ -358,3 +358,33 @@ Requirements:
 
 Respond ONLY with JSON (no markdown) that follows this schema:
 ${UPDATED_RESUME_FORMAT}`;
+
+export const prepareApplicationEmailPrompt = ({
+                                                  candidateName,
+                                                  companyName,
+                                                  jobTitle,
+                                                  jobDescription,
+                                                  resumeSummary,
+                                              }: {
+    candidateName?: string;
+    companyName?: string;
+    jobTitle: string;
+    jobDescription?: string;
+    resumeSummary: string;
+}) => `You are a world-class career coach. Draft a short application email the candidate can send directly to a hiring manager or recruiter.
+
+Candidate: ${candidateName || "the applicant"}
+Target role: ${jobTitle}
+Company: ${companyName || "the organisation"}
+Resume summary: ${resumeSummary}
+Job description excerpt: ${jobDescription || "N/A"}
+
+Return JSON only, matching exactly:
+{
+  "subject": string,
+  "salutation": string,
+  "body": string,
+  "closing": string
+}
+
+Keep the body to 2 short paragraphs, mention resume alignment, highlight 1-2 quantified achievements, and close with a call-to-action. Do not include markdown fences or any commentary.`;

@@ -5,6 +5,7 @@ import Summary from "~/Components/Summary";
 import ATS from "~/Components/ATS";
 import Details from "~/Components/Details";
 import EnhancedResume from "~/Components/EnhancedResume";
+import ApplicationEmail from "~/Components/ApplicationEmail";
 
 const clampScore = (value: number | undefined, fallback = 0) =>
     Math.max(0, Math.min(100, typeof value === "number" ? Math.round(value) : fallback));
@@ -257,6 +258,7 @@ const Resume = () => {
     } | null>(null);
     const [enhancedResume, setEnhancedResume] = useState<Resume["enhancedResume"] | null>(null);
     const [enhancedPdfUrl, setEnhancedPdfUrl] = useState('');
+    const [applicationEmail, setApplicationEmail] = useState<ApplicationEmail | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -294,6 +296,7 @@ const Resume = () => {
                 jobDescription: data.jobDescription,
             });
             setEnhancedResume(data.enhancedResume || null);
+            setApplicationEmail(data.applicationEmail || null);
             console.log({resumeUrl, imageUrl, feedback: transformedFeedback });
         }
 
@@ -410,6 +413,14 @@ const Resume = () => {
                                     resume={enhancedResume.content}
                                     downloadUrl={enhancedPdfUrl}
                                     filename={enhancedResume.filename}
+                                />
+                            )}
+                            {applicationEmail && (
+                                <ApplicationEmail
+                                    email={applicationEmail}
+                                    candidateName={
+                                        enhancedResume?.content?.candidateName || auth.user?.username || "Candidate"
+                                    }
                                 />
                             )}
                             <Summary feedback={feedback} />

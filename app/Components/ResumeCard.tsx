@@ -8,8 +8,10 @@ const ResumeCard = ({ resume }: { resume: Resume }) => {
     const [previewUrl, setPreviewUrl] = useState("");
 
     const { id, companyName, jobTitle, feedback, imagePath } = resume;
-    const keywordMatch = feedback.ATS?.keywordMatch ?? feedback.ATS?.score ?? feedback.overallScore;
-    const priorityFix = feedback.ATS?.priorityFixes?.[0];
+    const overallScore = feedback?.overallScore ?? 0;
+    const keywordMatch =
+        feedback?.ATS?.keywordMatch ?? feedback?.ATS?.score ?? overallScore;
+    const priorityFix = feedback?.ATS?.priorityFixes?.[0];
 
     useEffect(() => {
         let active = true;
@@ -44,7 +46,7 @@ const ResumeCard = ({ resume }: { resume: Resume }) => {
                         {jobTitle || "Resume scan"}
                     </p>
                 </div>
-                <ScoreCircle score={feedback.overallScore} />
+                <ScoreCircle score={overallScore} />
             </div>
 
             {previewUrl ? (
@@ -67,10 +69,10 @@ const ResumeCard = ({ resume }: { resume: Resume }) => {
                     Keyword match: {Math.round(keywordMatch)}%
                 </span>
                 <span className="rounded-full bg-slate-100 px-3 py-1">
-                    ATS: {feedback.ATS?.score ?? "--"}/100
+                    ATS: {feedback?.ATS?.score ?? "--"}/100
                 </span>
                 <span className="rounded-full bg-slate-100 px-3 py-1">
-                    Content: {feedback.content.score}/100
+                    Content: {feedback?.content?.score ?? "--"}/100
                 </span>
                 {resume.enhancedResume && (
                     <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">

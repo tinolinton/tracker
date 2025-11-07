@@ -3,7 +3,11 @@ import Navbar from "~/Components/Navbar";
 import FileUploader from "~/Components/FileUploader";
 import { usePuterStore } from "../../lib/puter";
 import { useNavigate } from "react-router";
-import { prepareInstructions, prepareResumeRewritePrompt } from "../../constants";
+import {
+    prepareApplicationEmailPrompt,
+    prepareInstructions,
+    prepareResumeRewritePrompt,
+} from "../../constants";
 import { cn, generateUUID } from "../../lib/utils";
 import { convertPdfToImage } from "../../lib/pdf2img";
 import { generateResumePdf } from "../../lib/resumePdf";
@@ -17,6 +21,7 @@ type ProcessingStage =
     | "analyze"
     | "rewrite"
     | "pdf"
+    | "email"
     | "store"
     | "complete";
 
@@ -36,6 +41,13 @@ const getMessageText = (content: string | any[]): string => {
             .join("\n");
     }
     return "";
+};
+
+const extractJson = (payload: string): any => {
+    const trimmed = payload.trim();
+    const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const jsonCandidate = fencedMatch ? fencedMatch[1].trim() : trimmed;
+    return JSON.parse(jsonCandidate);
 };
 
 const Upload = () => {
@@ -223,9 +235,9 @@ const Upload = () => {
             : feedback.message.content[0].text;
 
         try {
-            data.feedback = JSON.parse(feedbackText);
+            data.feedback = extractJson(feedbackText);
         } catch (error) {
-            console.error("Failed to parse feedback", error);
+            console.error("Failed to parse feedback", error, feedbackText);
             return fail("Error: Unable to parse AI feedback. Please retry.");
         }
 
@@ -256,9 +268,9 @@ const Upload = () => {
         const rewriteText = getMessageText(rewriteResponse.message.content);
         let generatedResume: GeneratedResume;
         try {
-            generatedResume = JSON.parse(rewriteText);
+            generatedResume = extractJson(rewriteText);
         } catch (error) {
-            console.error("Failed to parse updated resume JSON", error);
+            console.error("Failed to parse updated resume JSON", error, rewriteText);
             return fail("Error: Unable to parse generated resume. Please retry.");
         }
 
@@ -273,6 +285,37 @@ const Upload = () => {
             callToAction: generatedResume.callToAction,
         });
 
+        updateStage("email", "Drafting a tailored application email.");
+        const emailPrompt = prepareApplicationEmailPrompt({
+            candidateName: generatedResume.candidateName || auth.user?.username,
+            companyName,
+            jobTitle,
+            jobDescription,
+            resumeSummary: generatedResume.summary,
+        });
+        const emailResponse = await ai.chat(
+            [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: emailPrompt },
+                    ],
+                },
+            ],
+            undefined,
+            undefined,
+            { model: "claude-3-7-sonnet" }
+        );
+        if (!emailResponse) return fail("Error: Failed to generate application email");
+        const emailText = getMessageText(emailResponse.message.content);
+        let applicationEmail: ApplicationEmail;
+        try {
+            applicationEmail = extractJson(emailText);
+        } catch (error) {
+            console.error("Failed to parse application email", error, emailText);
+            return fail("Error: Unable to parse application email. Please retry.");
+        }
+
         updateStage("store", "Saving the regenerated resume.");
         const uploadedUpdatedResume = await fs.upload([resumePdf]);
         if (!uploadedUpdatedResume) return fail("Error: Failed to upload updated resume PDF");
@@ -283,6 +326,7 @@ const Upload = () => {
             updatedAt: Date.now(),
             filename: resumePdf.name,
         };
+        data.applicationEmail = applicationEmail;
 
         await kv.set(`resume:${uuid}`, JSON.stringify(data));
 
@@ -351,6 +395,11 @@ const Upload = () => {
                 id: "pdf" as ProcessingStage,
                 label: "PDF rendering",
                 description: "We typeset the content into a polished layout.",
+            },
+            {
+                id: "email" as ProcessingStage,
+                label: "Application email",
+                description: "AI drafts a tailored outreach email.",
             },
             {
                 id: "store" as ProcessingStage,
@@ -430,7 +479,7 @@ const Upload = () => {
                         </div>
 
                         {existingResumes.length > 0 && (
-                            <div className="space-y-4 rounded-2xl border border-white/50 bg-white/70 p-4 shadow-sm">
+                    <div className="space-y-4 rounded-2xl border border-white/50 bg-white/70 p-4 shadow-sm">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
                                         <p className="text-sm font-semibold text-slate-700">
@@ -498,6 +547,11 @@ const Upload = () => {
                                                 {selectedResume.enhancedResume && (
                                                     <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
                                                         Enhanced CV ready
+                                                    </span>
+                                                )}
+                                                {selectedResume.applicationEmail && (
+                                                    <span className="rounded-full bg-sky-50 px-2 py-0.5 text-sky-700">
+                                                        Email ready
                                                     </span>
                                                 )}
                                             </div>

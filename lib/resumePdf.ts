@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type RGB } from "pdf-lib";
 
 type ResumeSection = {
     title: string;
@@ -15,32 +15,127 @@ export interface ResumePdfInput {
     callToAction?: string;
 }
 
-const lineHeight = 14;
-const pageMargin = 50;
+const LETTER_WIDTH = 612;
+const LETTER_HEIGHT = 792;
+const MARGIN = 48;
+const LINE_HEIGHT = 14;
+const SECTION_GAP = 26;
 
-const addWrappedText = (
+const wrapText = (
     text: string,
     font: any,
     fontSize: number,
     maxWidth: number
-) => {
+): string[] => {
+    if (!text) return [];
     const words = text.split(" ");
     const lines: string[] = [];
     let currentLine = "";
 
     words.forEach((word) => {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const width = font.widthOfTextAtSize(testLine, fontSize);
+        const candidate = currentLine ? `${currentLine} ${word}` : word;
+        const width = font.widthOfTextAtSize(candidate, fontSize);
         if (width > maxWidth && currentLine) {
             lines.push(currentLine);
             currentLine = word;
         } else {
-            currentLine = testLine;
+            currentLine = candidate;
         }
     });
 
     if (currentLine) lines.push(currentLine);
     return lines;
+};
+
+const drawParagraph = ({
+                           page,
+                           text,
+                           font,
+                           size,
+                           color,
+                           x,
+                           y,
+                           maxWidth,
+                       }: {
+    page: any;
+    text: string;
+    font: any;
+    size: number;
+    color: RGB;
+    x: number;
+    y: number;
+    maxWidth: number;
+}) => {
+    let cursor = y;
+    const lines = wrapText(text, font, size, maxWidth);
+    lines.forEach((line) => {
+        page.drawText(line, { x, y: cursor, size, font, color });
+        cursor -= LINE_HEIGHT;
+    });
+    return cursor - 8;
+};
+
+const drawBullets = ({
+                         page,
+                         bullets,
+                         font,
+                         size,
+                         color,
+                         x,
+                         y,
+                         maxWidth,
+                     }: {
+    page: any;
+    bullets: string[];
+    font: any;
+    size: number;
+    color: RGB;
+    x: number;
+    y: number;
+    maxWidth: number;
+}) => {
+    let cursor = y;
+    bullets.forEach((bullet) => {
+        const bulletLines = wrapText(bullet, font, size, maxWidth - 18);
+        page.drawText("•", { x, y: cursor, size, font, color });
+        let innerY = cursor;
+        bulletLines.forEach((line, idx) => {
+            page.drawText(line, { x: x + 14, y: innerY, size, font, color });
+            innerY -= LINE_HEIGHT;
+            if (idx < bulletLines.length - 1) innerY += 2;
+        });
+        cursor = innerY - 6;
+    });
+    return cursor - 4;
+};
+
+const drawSectionHeading = ({
+                                page,
+                                title,
+                                font,
+                                color,
+                                y,
+                            }: {
+    page: any;
+    title: string;
+    font: any;
+    color: RGB;
+    y: number;
+}) => {
+    page.drawText(title.toUpperCase(), {
+        x: MARGIN,
+        y,
+        size: 12,
+        font,
+        color,
+    });
+    page.drawLine({
+        start: { x: MARGIN, y: y - 6 },
+        end: { x: LETTER_WIDTH - MARGIN, y: y - 6 },
+        thickness: 1,
+        color: rgb(0.72, 0.75, 0.82),
+    });
+    return y - SECTION_GAP;
 };
 
 export const generateResumePdf = async ({
@@ -53,123 +148,144 @@ export const generateResumePdf = async ({
                                             callToAction,
                                         }: ResumePdfInput): Promise<File> => {
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const page = pdfDoc.addPage([LETTER_WIDTH, LETTER_HEIGHT]);
+    const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    const { height, width } = page.getSize();
-    let cursorY = height - pageMargin;
+    let cursor = LETTER_HEIGHT - MARGIN;
 
-    const drawHeading = (text: string) => {
-        page.drawText(text, {
-            x: pageMargin,
-            y: cursorY,
-            size: 20,
-            font: boldFont,
-            color: rgb(0.15, 0.2, 0.35),
-        });
-        cursorY -= 24;
+    const drawCenteredText = (text: string, size: number, font: any, color: RGB) => {
+        const textWidth = font.widthOfTextAtSize(text, size);
+        const x = (LETTER_WIDTH - textWidth) / 2;
+        page.drawText(text, { x, y: cursor, size, font, color });
+        cursor -= size + 6;
     };
 
-    const drawSubheading = (text: string) => {
-        page.drawText(text, {
-            x: pageMargin,
-            y: cursorY,
-            size: 12,
-            font,
-            color: rgb(0.35, 0.4, 0.5),
-        });
-        cursorY -= 18;
-    };
-
-    const drawSectionTitle = (text: string) => {
-        page.drawText(text.toUpperCase(), {
-            x: pageMargin,
-            y: cursorY,
-            size: 12,
-            font: boldFont,
-            color: rgb(0.28, 0.34, 0.58),
-        });
-        cursorY -= 18;
-    };
-
-    const drawParagraph = (text: string) => {
-        const maxWidth = width - pageMargin * 2;
-        const lines = addWrappedText(text, font, 11, maxWidth);
-        lines.forEach((line) => {
-            page.drawText(line, {
-                x: pageMargin,
-                y: cursorY,
-                size: 11,
-                font,
-                color: rgb(0.2, 0.23, 0.3),
-            });
-            cursorY -= lineHeight;
-        });
-        cursorY -= 6;
-    };
-
-    const drawBullets = (bullets: string[]) => {
-        const maxWidth = width - pageMargin * 2 - 16;
-        bullets.forEach((bullet) => {
-            const wrappedLines = addWrappedText(bullet, font, 11, maxWidth);
-            page.drawText("•", {
-                x: pageMargin,
-                y: cursorY,
-                size: 12,
-                font,
-                color: rgb(0.18, 0.2, 0.3),
-            });
-            wrappedLines.forEach((line, index) => {
-                page.drawText(line, {
-                    x: pageMargin + 14,
-                    y: cursorY,
-                    size: 11,
-                    font,
-                    color: rgb(0.2, 0.23, 0.3),
-                });
-                cursorY -= lineHeight;
-                if (index < wrappedLines.length - 1) cursorY += 2;
-            });
-            cursorY -= 6;
-        });
-        cursorY -= 4;
-    };
-
-    drawHeading(candidateName);
+    // Header
+    drawCenteredText(candidateName.toUpperCase(), 22, bold, rgb(0.07, 0.09, 0.21));
     if (targetRole) {
-        drawSubheading(targetRole);
+        drawCenteredText(targetRole, 12, regular, rgb(0.3, 0.33, 0.45));
     }
+    const headerNote = "Generated by ResumeTracker · ATS-ready document";
+    drawCenteredText(headerNote, 10, regular, rgb(0.45, 0.48, 0.58));
+    cursor -= 6;
+    page.drawLine({
+        start: { x: MARGIN, y: cursor },
+        end: { x: LETTER_WIDTH - MARGIN, y: cursor },
+        thickness: 1,
+        color: rgb(0.78, 0.8, 0.85),
+    });
+    cursor -= SECTION_GAP;
 
-    drawSectionTitle("Professional Summary");
-    drawParagraph(summary);
+    // Summary
+    cursor = drawSectionHeading({
+        page,
+        title: "Professional Summary",
+        font: bold,
+        color: rgb(0.18, 0.2, 0.3),
+        y: cursor,
+    });
+    cursor = drawParagraph({
+        page,
+        text: summary,
+        font: regular,
+        size: 11,
+        color: rgb(0.15, 0.17, 0.22),
+        x: MARGIN,
+        y: cursor,
+        maxWidth: LETTER_WIDTH - MARGIN * 2,
+    }) - 4;
 
+    // Dynamic sections
     sections.forEach((section) => {
         if (!section.title || !section.bullets?.length) return;
-        drawSectionTitle(section.title);
-        drawBullets(section.bullets);
+        cursor = drawSectionHeading({
+            page,
+            title: section.title,
+            font: bold,
+            color: rgb(0.18, 0.2, 0.3),
+            y: cursor,
+        });
+        cursor = drawBullets({
+            page,
+            bullets: section.bullets,
+            font: regular,
+            size: 11,
+            color: rgb(0.15, 0.17, 0.22),
+            x: MARGIN,
+            y: cursor,
+            maxWidth: LETTER_WIDTH - MARGIN * 2,
+        });
+        cursor -= 6;
     });
 
     if (skills.length) {
-        drawSectionTitle("Key Skills");
-        drawParagraph(skills.join(" • "));
+        cursor = drawSectionHeading({
+            page,
+            title: "Core Competencies",
+            font: bold,
+            color: rgb(0.18, 0.2, 0.3),
+            y: cursor,
+        });
+        const skillLines = wrapText(skills.join(" • "), regular, 11, LETTER_WIDTH - MARGIN * 2);
+        cursor -= 4;
+        skillLines.forEach((line) => {
+            page.drawText(line, {
+                x: MARGIN,
+                y: cursor,
+                size: 11,
+                font: regular,
+                color: rgb(0.15, 0.17, 0.22),
+            });
+            cursor -= LINE_HEIGHT;
+        });
+        cursor -= 2;
     }
 
     if (achievements.length) {
-        drawSectionTitle("Highlighted Wins");
-        drawBullets(achievements);
+        cursor = drawSectionHeading({
+            page,
+            title: "Highlighted Achievements",
+            font: bold,
+            color: rgb(0.18, 0.2, 0.3),
+            y: cursor,
+        });
+        cursor = drawBullets({
+            page,
+            bullets: achievements,
+            font: regular,
+            size: 11,
+            color: rgb(0.15, 0.17, 0.22),
+            x: MARGIN,
+            y: cursor,
+            maxWidth: LETTER_WIDTH - MARGIN * 2,
+        });
     }
 
     if (callToAction) {
-        drawSectionTitle("Next Steps");
-        drawParagraph(callToAction);
+        cursor = drawSectionHeading({
+            page,
+            title: "References",
+            font: bold,
+            color: rgb(0.18, 0.2, 0.3),
+            y: cursor,
+        });
+        cursor = drawParagraph({
+            page,
+            text: callToAction,
+            font: regular,
+            size: 11,
+            color: rgb(0.15, 0.17, 0.22),
+            x: MARGIN,
+            y: cursor,
+            maxWidth: LETTER_WIDTH - MARGIN * 2,
+        });
     }
 
     const pdfBytes = await pdfDoc.save();
     const arrayBuffer = new ArrayBuffer(pdfBytes.byteLength);
     new Uint8Array(arrayBuffer).set(pdfBytes);
     const pdfBlob = new Blob([arrayBuffer], { type: "application/pdf" });
-    return new File([pdfBlob], `${candidateName.replace(/\s+/g, "_")}_resume.pdf`, {
-        type: "application/pdf",
-    });
+    const safeName = candidateName.replace(/\s+/g, "_");
+    return new File([pdfBlob], `${safeName}_resume.pdf`, { type: "application/pdf" });
 };
