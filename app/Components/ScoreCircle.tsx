@@ -1,4 +1,4 @@
-const ScoreCircle = ({ score = 75 }: { score: number }) => {
+const ScoreCircle = ({ score = 75, size = 110 }: { score: number; size?: number }) => {
     const radius = 40;
     const stroke = 8;
     const normalizedRadius = radius - stroke / 2;
@@ -7,7 +7,7 @@ const ScoreCircle = ({ score = 75 }: { score: number }) => {
     const strokeDashoffset = circumference * (1 - progress);
 
     return (
-        <div className="relative w-[100px] h-[100px]">
+        <div className="relative" style={{ width: size, height: size }}>
             <svg
                 height="100%"
                 width="100%"

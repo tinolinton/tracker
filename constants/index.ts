@@ -6,26 +6,75 @@ export const resumes: Resume[] = [
         imagePath: "/images/resume-01.png",
         resumePath: "/resumes/resume-1.pdf",
         feedback: {
-            overallScore: 85,
+            overallScore: 86,
             ATS: {
-                score: 90,
-                tips: [],
+                score: 88,
+                keywordMatch: 82,
+                formattingScore: 92,
+                readabilityScore: 84,
+                complianceScore: 86,
+                parsingConfidence: 91,
+                matchedKeywords: ["React", "TypeScript", "Design Systems", "Unit Testing"],
+                missingKeywords: ["GraphQL", "Performance Optimization"],
+                redFlags: ["Missing measurable impact for recent projects"],
+                priorityFixes: [
+                    "Add impact metrics for the flagship dashboard project",
+                    "Call out experience collaborating with product/UX partners",
+                ],
+                tips: [
+                    {
+                        type: "good",
+                        tip: "Clean visual structure",
+                        explanation:
+                            "Section hierarchy and whitespace make it easy for parsing engines to follow.",
+                    },
+                    {
+                        type: "improve",
+                        tip: "Expand keyword density",
+                        explanation:
+                            "Mirror wording from the job description to increase exact keyword matches for ATS scanners.",
+                    },
+                ],
             },
             toneAndStyle: {
                 score: 90,
-                tips: [],
+                tips: [
+                    {
+                        type: "good",
+                        tip: "Confident voice",
+                        explanation: "Action verbs and ownership language communicate leadership.",
+                    },
+                ],
             },
             content: {
-                score: 90,
-                tips: [],
+                score: 84,
+                tips: [
+                    {
+                        type: "improve",
+                        tip: "Quantify achievements",
+                        explanation: "Add baseline metrics so impact statements feel concrete.",
+                    },
+                ],
             },
             structure: {
-                score: 90,
-                tips: [],
+                score: 92,
+                tips: [
+                    {
+                        type: "good",
+                        tip: "One-page format",
+                        explanation: "Stays within ATS-friendly layout conventions.",
+                    },
+                ],
             },
             skills: {
-                score: 90,
-                tips: [],
+                score: 78,
+                tips: [
+                    {
+                        type: "improve",
+                        tip: "Highlight testing tools",
+                        explanation: "List Jest/React Testing Library since they are requested in the posting.",
+                    },
+                ],
             },
         },
     },
@@ -36,26 +85,76 @@ export const resumes: Resume[] = [
         imagePath: "/images/resume-02.png",
         resumePath: "/resumes/resume-2.pdf",
         feedback: {
-            overallScore: 55,
+            overallScore: 68,
             ATS: {
-                score: 90,
-                tips: [],
+                score: 64,
+                keywordMatch: 58,
+                formattingScore: 72,
+                readabilityScore: 60,
+                complianceScore: 66,
+                parsingConfidence: 70,
+                matchedKeywords: ["Azure", "Terraform", "CI/CD"],
+                missingKeywords: ["Kubernetes", "Cost Optimization", "Disaster Recovery"],
+                redFlags: ["Dense paragraph blocks that lower scanability"],
+                priorityFixes: [
+                    "Convert paragraphs to bullet points with metrics",
+                    "Add experience with managed Kubernetes services",
+                ],
+                tips: [
+                    {
+                        type: "good",
+                        tip: "Strong platform coverage",
+                        explanation: "Hands-on Azure experience is evident across multiple roles.",
+                    },
+                    {
+                        type: "improve",
+                        tip: "Fix formatting noise",
+                        explanation:
+                            "Use consistent bullet symbols and reduce font variations to improve parsing accuracy.",
+                    },
+                ],
             },
             toneAndStyle: {
-                score: 90,
-                tips: [],
+                score: 62,
+                tips: [
+                    {
+                        type: "improve",
+                        tip: "Reduce filler wording",
+                        explanation: "Shorten phrases like “responsible for” to action verbs for clarity.",
+                    },
+                ],
             },
             content: {
-                score: 90,
-                tips: [],
+                score: 70,
+                tips: [
+                    {
+                        type: "good",
+                        tip: "Clear ownership",
+                        explanation: "Each bullet indicates the role you played in the initiative.",
+                    },
+                ],
             },
             structure: {
-                score: 90,
-                tips: [],
+                score: 65,
+                tips: [
+                    {
+                        type: "improve",
+                        tip: "Normalize headings",
+                        explanation:
+                            "Ensure headings use the same font size and weight so ATS parsers can detect sections.",
+                    },
+                ],
             },
             skills: {
-                score: 90,
-                tips: [],
+                score: 60,
+                tips: [
+                    {
+                        type: "improve",
+                        tip: "Call out security tooling",
+                        explanation:
+                            "List cloud security controls (Key Vault, Defender) since they are part of the role.",
+                    },
+                ],
             },
         },
     },
@@ -66,83 +165,145 @@ export const resumes: Resume[] = [
         imagePath: "/images/resume-03.png",
         resumePath: "/resumes/resume-3.pdf",
         feedback: {
-            overallScore: 75,
+            overallScore: 74,
             ATS: {
-                score: 90,
-                tips: [],
+                score: 76,
+                keywordMatch: 72,
+                formattingScore: 81,
+                readabilityScore: 78,
+                complianceScore: 75,
+                parsingConfidence: 80,
+                matchedKeywords: ["SwiftUI", "Combine", "Unit Testing"],
+                missingKeywords: ["Accessibility", "Animations", "Localization"],
+                redFlags: ["Skill summary is buried at the bottom of the page"],
+                priorityFixes: [
+                    "Move the skills graph near the top of the resume",
+                    "Add a bullet on accessibility compliance (WCAG)",
+                ],
+                tips: [
+                    {
+                        type: "good",
+                        tip: "Readable layout",
+                        explanation:
+                            "Two-column structure with consistent spacing aligns with ATS parsing heuristics.",
+                    },
+                    {
+                        type: "improve",
+                        tip: "Surface flagship metrics",
+                        explanation:
+                            "Highlight MAU and crash-rate improvements for the iOS apps you shipped.",
+                    },
+                ],
             },
             toneAndStyle: {
-                score: 90,
-                tips: [],
+                score: 78,
+                tips: [
+                    {
+                        type: "good",
+                        tip: "Product mindset",
+                        explanation:
+                            "Bullets reference user satisfaction and app-store ratings which recruiters value.",
+                    },
+                ],
             },
             content: {
-                score: 90,
-                tips: [],
+                score: 72,
+                tips: [
+                    {
+                        type: "improve",
+                        tip: "Mention Apple ecosystem tools",
+                        explanation:
+                            "Add instrumenting, TestFlight, and App Store Connect where relevant.",
+                    },
+                ],
             },
             structure: {
-                score: 90,
-                tips: [],
+                score: 80,
+                tips: [
+                    {
+                        type: "good",
+                        tip: "Consistent date formatting",
+                        explanation: "YYYY-MM ranges are machine readable and ATS friendly.",
+                    },
+                ],
             },
             skills: {
-                score: 90,
-                tips: [],
+                score: 70,
+                tips: [
+                    {
+                        type: "improve",
+                        tip: "Add localization experience",
+                        explanation:
+                            "Include handling of RTL languages since the role mentions global launches.",
+                    },
+                ],
             },
         },
     },
 ];
 
-export const AIResponseFormat = `
-      interface Feedback {
-      overallScore: number; //max 100
-      ATS: {
-        score: number; //rate based on ATS suitability
-        tips: {
-          type: "good" | "improve";
-          tip: string; //give 3-4 tips
-        }[];
-      };
-      toneAndStyle: {
-        score: number; //max 100
-        tips: {
-          type: "good" | "improve";
-          tip: string; //make it a short "title" for the actual explanation
-          explanation: string; //explain in detail here
-        }[]; //give 3-4 tips
-      };
-      content: {
-        score: number; //max 100
-        tips: {
-          type: "good" | "improve";
-          tip: string; //make it a short "title" for the actual explanation
-          explanation: string; //explain in detail here
-        }[]; //give 3-4 tips
-      };
-      structure: {
-        score: number; //max 100
-        tips: {
-          type: "good" | "improve";
-          tip: string; //make it a short "title" for the actual explanation
-          explanation: string; //explain in detail here
-        }[]; //give 3-4 tips
-      };
-      skills: {
-        score: number; //max 100
-        tips: {
-          type: "good" | "improve";
-          tip: string; //make it a short "title" for the actual explanation
-          explanation: string; //explain in detail here
-        }[]; //give 3-4 tips
-      };
-    }`;
+export const AI_RESPONSE_FORMAT = `
+interface Feedback {
+  overallScore: number; // 0-100 composite score
+  ATS: {
+    score: number; // holistic ATS readiness
+    keywordMatch: number; // keyword coverage percentage
+    formattingScore: number; // layout compliance
+    readabilityScore: number; // sentence clarity / bullet structure
+    complianceScore: number; // alignment to ATS friendly best practices
+    parsingConfidence: number; // how well the resume can be parsed
+    matchedKeywords: string[]; // keywords already present verbatim
+    missingKeywords: string[]; // keywords to add verbatim
+    redFlags: string[]; // structural blockers that may cause rejection
+    priorityFixes: string[]; // 2-4 high-impact tasks to improve ATS score
+    tips: {
+      type: "good" | "improve";
+      tip: string;
+      explanation: string;
+    }[]; // 3-5 total, each with explanation
+  };
+  toneAndStyle: {
+    score: number;
+    tips: {
+      type: "good" | "improve";
+      tip: string;
+      explanation: string;
+    }[];
+  };
+  content: {
+    score: number;
+    tips: {
+      type: "good" | "improve";
+      tip: string;
+      explanation: string;
+    }[];
+  };
+  structure: {
+    score: number;
+    tips: {
+      type: "good" | "improve";
+      tip: string;
+      explanation: string;
+    }[];
+  };
+  skills: {
+    score: number;
+    tips: {
+      type: "good" | "improve";
+      tip: string;
+      explanation: string;
+    }[];
+  };
+}`;
 
 export const prepareInstructions = ({
                                         jobTitle,
                                         jobDescription,
-                                        AIResponseFormat,
+                                        responseFormat = AI_RESPONSE_FORMAT,
                                     }: {
     jobTitle: string;
     jobDescription: string;
-    AIResponseFormat: string;
+    responseFormat?: string;
 }) =>
     `You are an expert in ATS (Applicant Tracking System) and resume analysis.
   Please analyze and rate this resume and suggest how to improve it.
@@ -153,6 +314,6 @@ export const prepareInstructions = ({
   If provided, take the job description into consideration.
   The job title is: ${jobTitle}
   The job description is: ${jobDescription}
-  Provide the feedback using the following format: ${AIResponseFormat}
+  Provide the feedback using the following format: ${responseFormat}
   Return the analysis as a JSON object, without any other text and without the backticks.
   Do not include any other text or comments.`;

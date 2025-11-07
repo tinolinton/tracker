@@ -14,45 +14,37 @@ interface Resume {
     feedback: Feedback;
 }
 
+type FeedbackTip = {
+    type: "good" | "improve";
+    tip: string;
+    explanation: string;
+};
+
+type FeedbackCategory = {
+    score: number;
+    tips: FeedbackTip[];
+};
+
 interface Feedback {
     overallScore: number;
-    ATS: {
-        score: number;
-        tips: {
-            type: "good" | "improve";
-            tip: string;
-        }[];
+    ATS: FeedbackCategory & {
+        keywordMatch: number;
+        formattingScore: number;
+        readabilityScore: number;
+        complianceScore: number;
+        parsingConfidence: number;
+        matchedKeywords: string[];
+        missingKeywords: string[];
+        redFlags: string[];
+        priorityFixes: string[];
     };
-    toneAndStyle: {
-        score: number;
-        tips: {
-            type: "good" | "improve";
-            tip: string;
-            explanation: string;
-        }[];
-    };
-    content: {
-        score: number;
-        tips: {
-            type: "good" | "improve";
-            tip: string;
-            explanation: string;
-        }[];
-    };
-    structure: {
-        score: number;
-        tips: {
-            type: "good" | "improve";
-            tip: string;
-            explanation: string;
-        }[];
-    };
-    skills: {
-        score: number;
-        tips: {
-            type: "good" | "improve";
-            tip: string;
-            explanation: string;
-        }[];
-    };
+    toneAndStyle: FeedbackCategory;
+    content: FeedbackCategory;
+    structure: FeedbackCategory;
+    skills: FeedbackCategory;
+}
+
+declare module "*.mjs?url" {
+    const src: string;
+    export default src;
 }

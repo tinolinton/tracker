@@ -1,65 +1,189 @@
-import {cn} from "../../lib/utils";
+import { cn } from "../../lib/utils";
+import ScoreCircle from "~/Components/ScoreCircle";
+
+type AtsProps = {
+    score: number;
+    suggestions: FeedbackTip[];
+    keywordMatch?: number;
+    formattingScore?: number;
+    readabilityScore?: number;
+    complianceScore?: number;
+    parsingConfidence?: number;
+    matchedKeywords?: string[];
+    missingKeywords?: string[];
+    priorityFixes?: string[];
+    redFlags?: string[];
+};
+
+const MetricBar = ({ label, value }: { label: string; value?: number }) => (
+    <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>{label}</span>
+            <span className="font-semibold text-slate-900">
+                {typeof value === "number" ? `${value}%` : "--"}
+            </span>
+        </div>
+        <div className="h-2 w-full rounded-full bg-slate-100">
+            <div
+                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+                style={{ width: `${value ?? 0}%` }}
+            />
+        </div>
+    </div>
+);
+
+const ChipList = ({
+                      title,
+                      items,
+                      tone = "neutral",
+                  }: {
+    title: string;
+    items?: string[];
+    tone?: "neutral" | "warning";
+}) => (
+    <div className="rounded-2xl border border-white/40 bg-white/70 p-4 backdrop-blur">
+        <p className="text-sm font-semibold text-slate-500">{title}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+            {items?.length ? (
+                items.map((item) => (
+                    <span
+                        key={item}
+                        className={cn(
+                            "rounded-full px-3 py-1 text-xs font-semibold",
+                            tone === "warning"
+                                ? "bg-rose-50 text-rose-600 border border-rose-100"
+                                : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                        )}
+                    >
+                        {item}
+                    </span>
+                ))
+            ) : (
+                <span className="text-sm text-slate-400">No items</span>
+            )}
+        </div>
+    </div>
+);
+
+const ListBlock = ({
+                       title,
+                       items,
+                       tone = "neutral",
+                   }: {
+    title: string;
+    items?: string[];
+    tone?: "neutral" | "warning";
+}) => (
+    <div
+        className={cn(
+            "rounded-2xl border p-4 backdrop-blur",
+            tone === "warning"
+                ? "border-rose-200/60 bg-rose-50/60"
+                : "border-white/40 bg-white/70"
+        )}
+    >
+        <p className="text-sm font-semibold text-slate-600">{title}</p>
+        <ul className="mt-3 space-y-2 text-sm text-slate-600">
+            {items?.length ? (
+                items.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400" />
+                        <span>{item}</span>
+                    </li>
+                ))
+            ) : (
+                <li className="text-slate-400">No findings</li>
+            )}
+        </ul>
+    </div>
+);
 
 const ATS = ({
                  score,
-                 suggestions,
-             }: {
-    score: number;
-    suggestions: { type: "good" | "improve"; tip: string }[];
-}) => {
+                 suggestions = [],
+                 keywordMatch,
+                 formattingScore,
+                 readabilityScore,
+                 complianceScore,
+                 parsingConfidence,
+                 matchedKeywords,
+                 missingKeywords,
+                 priorityFixes,
+                 redFlags,
+             }: AtsProps) => {
+    const metrics = [
+        { label: "Keyword match", value: keywordMatch },
+        { label: "Formatting", value: formattingScore },
+        { label: "Readability", value: readabilityScore },
+        { label: "Compliance", value: complianceScore },
+        { label: "Parsing confidence", value: parsingConfidence },
+    ];
+
     return (
-        <div
-            className={cn(
-                "rounded-2xl shadow-md w-full bg-gradient-to-b to-light-white p-8 flex flex-col gap-4",
-                score > 69
-                    ? "from-green-100"
-                    : score > 49
-                        ? "from-yellow-100"
-                        : "from-red-100"
-            )}
-        >
-            <div className="flex flex-row gap-4 items-center">
-                <img
-                    src={
-                        score > 69
-                            ? "/icons/ats-good.svg"
-                            : score > 49
-                                ? "/icons/ats-warning.svg"
-                                : "/icons/ats-bad.svg"
-                    }
-                    alt="ATS"
-                    className="w-10 h-10"
-                />
-                <p className="text-2xl font-semibold">ATS Score - {score}/100</p>
-            </div>
-            <div className="flex flex-col gap-2">
-                <p className="font-medium text-xl">
-                    How well does your resume pass through Applicant Tracking Systems?
-                </p>
-                <p className="text-lg text-gray-500">
-                    Your resume was scanned like an employer would. Here's how it
-                    performed:
-                </p>
-                {suggestions.map((suggestion, index) => (
-                    <div className="flex flex-row gap-2 items-center" key={index}>
-                        <img
-                            src={
-                                suggestion.type === "good"
-                                    ? "/icons/check.svg"
-                                    : "/icons/warning.svg"
-                            }
-                            alt="ATS"
-                            className="w-4 h-4"
-                        />
-                        <p className="text-lg text-gray-500">{suggestion.tip}</p>
+        <section className="glass-panel w-full space-y-6 rounded-3xl p-6">
+            <div className="flex flex-wrap items-center justify-between gap-6">
+                <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                        ATS health
+                    </p>
+                    <p className="mt-2 text-4xl font-semibold text-slate-900">
+                        {score}/100
+                    </p>
+                    <p className="mt-2 max-w-xl text-sm text-slate-500">
+                        Blended score using parsing confidence, keyword density, and formatting checks.
+                    </p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <ScoreCircle score={score} />
+                    <div className="stat-chip">
+                        Parsing confidence <span>{parsingConfidence ?? "--"}%</span>
                     </div>
-                ))}
-                <p className="text-lg text-gray-500">
-                    Want a better score? Improve your resume by applying the suggestions
-                    listed below.
-                </p>
+                </div>
             </div>
-        </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+                {metrics.map((metric) => (
+                    <MetricBar key={metric.label} label={metric.label} value={metric.value} />
+                ))}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+                <ChipList title="Keywords detected" items={matchedKeywords} />
+                <ChipList title="Keywords to add" items={missingKeywords} tone="warning" />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+                <ListBlock title="Priority fixes" items={priorityFixes} />
+                <ListBlock title="Red flags" items={redFlags} tone="warning" />
+            </div>
+
+            <div className="space-y-3">
+                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Insight stream
+                </p>
+                <div className="space-y-3">
+                    {suggestions.map((suggestion, index) => (
+                        <div
+                            key={`${suggestion.tip}-${index}`}
+                            className={cn(
+                                "rounded-2xl border p-4 backdrop-blur",
+                                suggestion.type === "good"
+                                    ? "border-emerald-100 bg-emerald-50/60"
+                                    : "border-amber-100 bg-amber-50/60"
+                            )}
+                        >
+                            <p className="text-base font-semibold text-slate-900">{suggestion.tip}</p>
+                            <p className="text-sm text-slate-600">
+                                {suggestion.explanation || "Action item recorded from ATS analysis."}
+                            </p>
+                        </div>
+                    ))}
+                    {suggestions.length === 0 && (
+                        <p className="text-sm text-slate-400">No ATS-specific tips generated.</p>
+                    )}
+                </div>
+            </div>
+        </section>
     );
 };
 

@@ -1,49 +1,86 @@
-import {Link} from "react-router";
+import { Link } from "react-router";
+import { useEffect, useState } from "react";
 import ScoreCircle from "~/Components/ScoreCircle";
-import {useEffect, useState} from "react";
-import * as fs from "node:fs";
-import resume from "~/routes/resume";
-import {usePuterStore} from "../../lib/puter";
+import { usePuterStore } from "../../lib/puter";
 
-const ResumeCard = ({ resume: { id, companyName, jobTitle, feedback, imagePath } }: { resume: Resume }) => {
+const ResumeCard = ({ resume }: { resume: Resume }) => {
     const { fs } = usePuterStore();
-    const [resumeUrl, setResumeUrl] = useState('');
+    const [previewUrl, setPreviewUrl] = useState("");
+
+    const { id, companyName, jobTitle, feedback, imagePath } = resume;
+    const keywordMatch = feedback.ATS?.keywordMatch ?? feedback.ATS?.score ?? feedback.overallScore;
+    const priorityFix = feedback.ATS?.priorityFixes?.[0];
 
     useEffect(() => {
-        const loadResume = async () => {
+        let active = true;
+        let generatedUrl: string | null = null;
+        const loadPreview = async () => {
             const blob = await fs.read(imagePath);
-            if(!blob) return;
-            let url = URL.createObjectURL(blob);
-            setResumeUrl(url);
-        }
+            if (!blob || !active) return;
+            generatedUrl = URL.createObjectURL(blob);
+            setPreviewUrl(generatedUrl);
+        };
+        loadPreview();
 
-        loadResume();
-    }, [imagePath]);
+        return () => {
+            active = false;
+            if (generatedUrl) {
+                URL.revokeObjectURL(generatedUrl);
+            }
+        };
+    }, [fs, imagePath]);
 
     return (
-        <Link to={`/resume/${id}`} className="resume-card animate-in fade-in duration-1000">
-            <div className="resume-card-header">
-                <div className="flex flex-col gap-2">
-                    {companyName && <h2 className="!text-black font-bold break-words">{companyName}</h2>}
-                    {jobTitle && <h3 className="text-lg break-words text-gray-500">{jobTitle}</h3>}
-                    {!companyName && !jobTitle && <h2 className="!text-black font-bold">Resume</h2>}
+        <Link
+            to={`/resume/${id}`}
+            className="group flex h-full flex-col gap-5 rounded-3xl border border-white/50 bg-white/80 p-5 shadow-lg shadow-slate-200/50 backdrop-blur transition hover:-translate-y-1 hover:shadow-indigo-200/80"
+        >
+            <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {companyName || "Untitled company"}
+                    </p>
+                    <p className="text-xl font-semibold text-slate-900 break-words">
+                        {jobTitle || "Resume scan"}
+                    </p>
                 </div>
-                <div className="flex-shrink-0">
-                    <ScoreCircle score={feedback.overallScore} />
-                </div>
+                <ScoreCircle score={feedback.overallScore} />
             </div>
-            {resumeUrl && (
-                <div className="gradient-border animate-in fade-in duration-1000">
-                    <div className="w-full h-full">
-                        <img
-                            src={resumeUrl}
-                            alt="resume"
-                            className="w-full h-[350px] max-sm:h-[200px] object-cover object-top"
-                        />
-                    </div>
+
+            {previewUrl ? (
+                <div className="relative h-56 w-full overflow-hidden rounded-2xl border border-slate-100">
+                    <img
+                        src={previewUrl}
+                        alt={`${jobTitle || "Resume"} preview`}
+                        className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.02]"
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-transparent" />
+                </div>
+            ) : (
+                <div className="flex h-56 w-full items-center justify-center rounded-2xl border border-dashed border-slate-200 text-sm text-slate-400">
+                    Preview loading…
                 </div>
             )}
+
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                <span className="rounded-full bg-slate-100 px-3 py-1">
+                    Keyword match: {Math.round(keywordMatch)}%
+                </span>
+                <span className="rounded-full bg-slate-100 px-3 py-1">
+                    ATS: {feedback.ATS?.score ?? "--"}/100
+                </span>
+                <span className="rounded-full bg-slate-100 px-3 py-1">
+                    Content: {feedback.content.score}/100
+                </span>
+            </div>
+
+            {priorityFix && (
+                <p className="text-sm text-slate-500">
+                    <span className="font-semibold text-slate-900">Next fix:</span> {priorityFix}
+                </p>
+            )}
         </Link>
-    )
-}
-export default ResumeCard
+    );
+};
+
+export default ResumeCard;

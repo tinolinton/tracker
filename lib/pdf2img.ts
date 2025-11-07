@@ -4,30 +4,45 @@ export interface PdfConversionResult {
     error?: string;
 }
 
-let pdfjsLib: any = null;
-let isLoading = false;
-let loadPromise: Promise<any> | null = null;
+type PdfJsLib = typeof import("pdfjs-dist");
 
-async function loadPdfJs(): Promise<any> {
+let pdfjsLib: PdfJsLib | null = null;
+let loadPromise: Promise<PdfJsLib> | null = null;
+let workerSrc: string | null = null;
+
+const resolveWorkerSrc = async () => {
+    if (workerSrc) return workerSrc;
+
+    try {
+        const workerModule = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+        workerSrc = workerModule.default;
+    } catch {
+        workerSrc = "/pdf.worker.min.mjs";
+    }
+
+    return workerSrc;
+};
+
+async function loadPdfJs(): Promise<PdfJsLib> {
     if (pdfjsLib) return pdfjsLib;
     if (loadPromise) return loadPromise;
 
-    isLoading = true;
-    // @ts-expect-error - pdfjs-dist/build/pdf.mjs is not a module
-    loadPromise = import("pdfjs-dist/build/pdf.mjs").then((lib) => {
-        // Set the worker source to use local file
-        lib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-        pdfjsLib = lib;
-        isLoading = false;
-        return lib;
-    });
+    loadPromise = (async () => {
+        try {
+            const lib = await import("pdfjs-dist");
+            const src = await resolveWorkerSrc();
+            lib.GlobalWorkerOptions.workerSrc = src;
+            pdfjsLib = lib;
+            return lib;
+        } finally {
+            loadPromise = null;
+        }
+    })();
 
     return loadPromise;
 }
 
-export async function convertPdfToImage(
-    file: File
-): Promise<PdfConversionResult> {
+export async function convertPdfToImage(file: File): Promise<PdfConversionResult> {
     try {
         const lib = await loadPdfJs();
 
@@ -39,21 +54,22 @@ export async function convertPdfToImage(
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
 
+        if (!context) {
+            throw new Error("Canvas context unavailable in this environment.");
+        }
+
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        if (context) {
-            context.imageSmoothingEnabled = true;
-            context.imageSmoothingQuality = "high";
-        }
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
 
-        await page.render({ canvasContext: context!, viewport }).promise;
+        await page.render({ canvasContext: context, viewport, canvas }).promise;
 
         return new Promise((resolve) => {
             canvas.toBlob(
                 (blob) => {
                     if (blob) {
-                        // Create a File from the blob with the same name as the pdf
                         const originalName = file.name.replace(/\.pdf$/i, "");
                         const imageFile = new File([blob], `${originalName}.png`, {
                             type: "image/png",
@@ -67,19 +83,21 @@ export async function convertPdfToImage(
                         resolve({
                             imageUrl: "",
                             file: null,
-                            error: "Failed to create image blob",
+                            error: "Unable to generate PNG preview from canvas output.",
                         });
                     }
                 },
                 "image/png",
                 1.0
-            ); // Set quality to maximum (1.0)
+            );
         });
     } catch (err) {
+        const message =
+            err instanceof Error ? err.message : "Unknown PDF conversion error.";
         return {
             imageUrl: "",
             file: null,
-            error: `Failed to convert PDF: ${err}`,
+            error: `Failed to convert PDF: ${message}`,
         };
     }
 }

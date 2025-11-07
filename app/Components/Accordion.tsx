@@ -55,7 +55,7 @@ export const Accordion: React.FC<AccordionProps> = ({
         <AccordionContext.Provider
             value={{ activeItems, toggleItem, isItemActive }}
         >
-            <div className={`space-y-2 ${className}`}>{children}</div>
+            <div className={cn("space-y-2", className)}>{children}</div>
         </AccordionContext.Provider>
     );
 };
