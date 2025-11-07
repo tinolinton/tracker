@@ -4,6 +4,7 @@ import {usePuterStore} from "../../lib/puter";
 import Summary from "~/Components/Summary";
 import ATS from "~/Components/ATS";
 import Details from "~/Components/Details";
+import EnhancedResume from "~/Components/EnhancedResume";
 
 const clampScore = (value: number | undefined, fallback = 0) =>
     Math.max(0, Math.min(100, typeof value === "number" ? Math.round(value) : fallback));
@@ -254,6 +255,8 @@ const Resume = () => {
         jobTitle?: string;
         jobDescription?: string;
     } | null>(null);
+    const [enhancedResume, setEnhancedResume] = useState<Resume["enhancedResume"] | null>(null);
+    const [enhancedPdfUrl, setEnhancedPdfUrl] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -290,6 +293,7 @@ const Resume = () => {
                 jobTitle: data.jobTitle,
                 jobDescription: data.jobDescription,
             });
+            setEnhancedResume(data.enhancedResume || null);
             console.log({resumeUrl, imageUrl, feedback: transformedFeedback });
         }
 
@@ -302,6 +306,27 @@ const Resume = () => {
             if (imageUrl) URL.revokeObjectURL(imageUrl);
         };
     }, [imageUrl, resumeUrl]);
+
+    useEffect(() => {
+        if (!enhancedResume?.pdfPath) {
+            setEnhancedPdfUrl('');
+            return;
+        }
+
+        let pdfUrl = '';
+        const loadPdf = async () => {
+            const blob = await fs.read(enhancedResume.pdfPath);
+            if (!blob) return;
+            pdfUrl = URL.createObjectURL(blob);
+            setEnhancedPdfUrl(pdfUrl);
+        };
+
+        loadPdf();
+
+        return () => {
+            if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+        };
+    }, [enhancedResume?.pdfPath, fs]);
 
     return (
         <main className="page-shell !pt-0">
@@ -380,6 +405,13 @@ const Resume = () => {
 
                     {feedback ? (
                         <div className="flex flex-col gap-6">
+                            {enhancedResume?.content && (
+                                <EnhancedResume
+                                    resume={enhancedResume.content}
+                                    downloadUrl={enhancedPdfUrl}
+                                    filename={enhancedResume.filename}
+                                />
+                            )}
                             <Summary feedback={feedback} />
                             <ATS
                                 score={feedback.ATS.score || 0}

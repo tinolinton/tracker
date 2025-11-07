@@ -1,11 +1,12 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Navbar from "~/Components/Navbar";
 import FileUploader from "~/Components/FileUploader";
 import { usePuterStore } from "../../lib/puter";
 import { useNavigate } from "react-router";
-import { prepareInstructions } from "../../constants";
+import { prepareInstructions, prepareResumeRewritePrompt } from "../../constants";
 import { cn, generateUUID } from "../../lib/utils";
 import { convertPdfToImage } from "../../lib/pdf2img";
+import { generateResumePdf } from "../../lib/resumePdf";
 
 type ProcessingStage =
     | "idle"
@@ -14,7 +15,28 @@ type ProcessingStage =
     | "imageUpload"
     | "persist"
     | "analyze"
+    | "rewrite"
+    | "pdf"
+    | "store"
     | "complete";
+
+type ResumeDraft = Omit<Resume, "feedback"> & { feedback: Feedback | string };
+
+const getMessageText = (content: string | any[]): string => {
+    if (typeof content === "string") return content;
+    if (Array.isArray(content)) {
+        return content
+            .map((block) => {
+                if (typeof block === "string") return block;
+                if (block?.text) return block.text;
+                if (block?.content) return block.content;
+                return "";
+            })
+            .filter(Boolean)
+            .join("\n");
+    }
+    return "";
+};
 
 const Upload = () => {
     const { auth, isLoading, fs, ai, kv } = usePuterStore();
@@ -23,9 +45,93 @@ const Upload = () => {
     const [statusText, setStatusText] = useState("Waiting for a resume upload");
     const [file, setFile] = useState<File | null>(null);
     const [activeStage, setActiveStage] = useState<ProcessingStage>("idle");
+    const [existingResumes, setExistingResumes] = useState<Resume[]>([]);
+    const [loadingExisting, setLoadingExisting] = useState(false);
+    const [selectedResumeId, setSelectedResumeId] = useState("");
+    const [existingPreviewUrl, setExistingPreviewUrl] = useState("");
+
+    const selectedResume = useMemo(
+        () => existingResumes.find((resume) => resume.id === selectedResumeId),
+        [existingResumes, selectedResumeId]
+    );
+
+    useEffect(() => {
+        const fetchExistingResumes = async () => {
+            setLoadingExisting(true);
+            try {
+                const stored = (await kv.list("resume:*", true)) as KVItem[];
+                const parsed =
+                    stored
+                        ?.map((item) => {
+                            try {
+                                return JSON.parse(item.value) as Resume;
+                            } catch {
+                                return null;
+                            }
+                        })
+                        .filter((resume): resume is Resume => !!resume?.resumePath) || [];
+                parsed.sort(
+                    (a, b) =>
+                        (b.enhancedResume?.updatedAt ?? 0) - (a.enhancedResume?.updatedAt ?? 0)
+                );
+                setExistingResumes(parsed);
+            } catch (error) {
+                console.error("Failed to load stored resumes", error);
+            } finally {
+                setLoadingExisting(false);
+            }
+        };
+
+        fetchExistingResumes();
+    }, [kv]);
+
+    useEffect(() => {
+        let previewUrl: string | null = null;
+        if (!selectedResume) {
+            setExistingPreviewUrl("");
+            return;
+        }
+
+        const loadPreview = async () => {
+            const blob = await fs.read(selectedResume.imagePath);
+            if (!blob) return;
+            previewUrl = URL.createObjectURL(blob);
+            setExistingPreviewUrl(previewUrl);
+        };
+
+        loadPreview();
+
+        return () => {
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+        };
+    }, [fs, selectedResume?.imagePath]);
+
+    const clearExistingSelection = () => {
+        setSelectedResumeId("");
+        setExistingPreviewUrl("");
+        if (!isProcessing) {
+            setStatusText(file ? "Ready to analyze" : "Waiting for a resume upload");
+            setActiveStage("idle");
+        }
+    };
+
+    const handleExistingSelection = (resumeId: string) => {
+        setSelectedResumeId(resumeId);
+        setFile(null);
+        if (!resumeId) {
+            clearExistingSelection();
+        } else if (!isProcessing) {
+            setStatusText("Ready to analyze using a stored resume");
+            setActiveStage("idle");
+        }
+    };
 
     const handleFileSelect = (file: File | null) => {
         setFile(file);
+        if (file) {
+            setSelectedResumeId("");
+            setExistingPreviewUrl("");
+        }
         if (!isProcessing) {
             setStatusText(file ? "Ready to analyze" : "Waiting for a resume upload");
             setActiveStage("idle");
@@ -48,43 +154,66 @@ const Upload = () => {
                                      jobTitle,
                                      jobDescription,
                                      file,
+                                     existingResume,
                                  }: {
         companyName: string;
         jobTitle: string;
         jobDescription: string;
-        file: File;
+        file?: File | null;
+        existingResume?: Resume | null;
     }) => {
         setIsProcessing(true);
 
-        updateStage("upload", "Uploading the resume securely…");
-        const uploadedFile = await fs.upload([file]);
-        if (!uploadedFile) return fail("Error: Failed to upload file");
+        let resumePath = existingResume?.resumePath;
+        let imagePath = existingResume?.imagePath;
+        let uploadedFilePath = resumePath;
 
-        updateStage("convert", "Generating a high-resolution preview…");
-        const imageFile = await convertPdfToImage(file);
-        if (!imageFile.file) {
-            return fail(imageFile.error ?? "Error: Failed to convert PDF to image");
+        if (file) {
+            updateStage("upload", "Uploading the resume securely…");
+            const uploadedFile = await fs.upload([file]);
+            if (!uploadedFile) return fail("Error: Failed to upload file");
+            uploadedFilePath = uploadedFile.path;
+
+            updateStage("convert", "Generating a high-resolution preview…");
+            const imageFile = await convertPdfToImage(file);
+            if (!imageFile.file) {
+                return fail(imageFile.error ?? "Error: Failed to convert PDF to image");
+            }
+
+            updateStage("imageUpload", "Uploading preview image…");
+            const uploadedImage = await fs.upload([imageFile.file]);
+            if (!uploadedImage) return fail("Error: Failed to upload image");
+
+            resumePath = uploadedFilePath;
+            imagePath = uploadedImage.path;
+        } else if (existingResume) {
+            updateStage("upload", "Reusing your previously uploaded resume.");
+            updateStage("convert", "Loading stored preview.");
+            updateStage("imageUpload", "Preview confirmed.");
+            uploadedFilePath = existingResume.resumePath;
         }
 
-        updateStage("imageUpload", "Uploading preview image…");
-        const uploadedImage = await fs.upload([imageFile.file]);
-        if (!uploadedImage) return fail("Error: Failed to upload image");
+        if (!resumePath || !imagePath || !uploadedFilePath) {
+            return fail("Error: Unable to locate resume file. Please upload again.");
+        }
 
         updateStage("persist", "Persisting resume metadata…");
         const uuid = generateUUID();
-        const data = {
+        const data: ResumeDraft = {
             id: uuid,
-            resumePath: uploadedFile.path,
-            imagePath: uploadedImage.path,
-            companyName, jobTitle, jobDescription,
-            feedback: '',
+            resumePath,
+            imagePath,
+            companyName,
+            jobTitle,
+            jobDescription,
+            feedback: "" as unknown as Feedback,
         };
         await kv.set(`resume:${uuid}`, JSON.stringify(data));
 
         updateStage("analyze", "Requesting ATS analysis from Claude…");
 
         const feedback = await ai.feedback(
-            uploadedFile.path,
+            uploadedFilePath,
             prepareInstructions({ jobTitle, jobDescription })
         );
         if (!feedback) return fail("Error: Failed to analyze resume");
@@ -101,7 +230,63 @@ const Upload = () => {
         }
 
         await kv.set(`resume:${uuid}`, JSON.stringify(data));
-        updateStage("complete", "Analysis complete — redirecting to your report");
+
+        updateStage("rewrite", "Drafting an upgraded, job-aligned resume narrative.");
+        const resumeRewritePrompt = prepareResumeRewritePrompt({
+            jobTitle,
+            jobDescription,
+            feedbackJSON: JSON.stringify(data.feedback, null, 2),
+        });
+        const rewriteResponse = await ai.chat(
+            [
+                {
+                    role: "user",
+                    content: [
+                        { type: "file", puter_path: uploadedFilePath },
+                        { type: "text", text: resumeRewritePrompt },
+                    ],
+                },
+            ],
+            undefined,
+            undefined,
+            { model: "claude-3-7-sonnet" }
+        );
+        if (!rewriteResponse) return fail("Error: Failed to generate updated resume draft");
+
+        const rewriteText = getMessageText(rewriteResponse.message.content);
+        let generatedResume: GeneratedResume;
+        try {
+            generatedResume = JSON.parse(rewriteText);
+        } catch (error) {
+            console.error("Failed to parse updated resume JSON", error);
+            return fail("Error: Unable to parse generated resume. Please retry.");
+        }
+
+        updateStage("pdf", "Rendering the polished resume PDF.");
+        const resumePdf = await generateResumePdf({
+            summary: generatedResume.summary,
+            sections: generatedResume.sections || [],
+            skills: generatedResume.skills || [],
+            achievements: generatedResume.achievements || [],
+            candidateName: generatedResume.candidateName || companyName || "Updated Resume",
+            targetRole: generatedResume.targetRole || jobTitle,
+            callToAction: generatedResume.callToAction,
+        });
+
+        updateStage("store", "Saving the regenerated resume.");
+        const uploadedUpdatedResume = await fs.upload([resumePdf]);
+        if (!uploadedUpdatedResume) return fail("Error: Failed to upload updated resume PDF");
+
+        data.enhancedResume = {
+            pdfPath: uploadedUpdatedResume.path,
+            content: generatedResume,
+            updatedAt: Date.now(),
+            filename: resumePdf.name,
+        };
+
+        await kv.set(`resume:${uuid}`, JSON.stringify(data));
+
+        updateStage("complete", "All set! Redirecting to your new report.");
         console.log(data);
         navigate(`/resume/${uuid}`);
     }
@@ -109,17 +294,26 @@ const Upload = () => {
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const form = e.currentTarget.closest("form");
-        if(!form) return;
+        if (!form) return;
         const formData = new FormData(form);
 
-        const companyName = formData.get('company-name') as string;
-        const jobTitle = formData.get('job-title') as string;
-        const jobDescription = formData.get('job-description') as string;
+        const companyName = formData.get("company-name") as string;
+        const jobTitle = formData.get("job-title") as string;
+        const jobDescription = formData.get("job-description") as string;
 
-        if(!file) return;
+        if (!file && !selectedResume) {
+            setStatusText("Upload a resume or choose one from your library before analyzing.");
+            return;
+        }
 
-        handleAnalyze({ companyName, jobTitle, jobDescription, file });
-    }
+        handleAnalyze({
+            companyName,
+            jobTitle,
+            jobDescription,
+            file,
+            existingResume: selectedResume,
+        });
+    };
 
     const processingSteps = useMemo(
         () => [
@@ -147,6 +341,21 @@ const Upload = () => {
                 id: "analyze" as ProcessingStage,
                 label: "ATS analysis",
                 description: "Claude builds ATS + recruiter-ready insights.",
+            },
+            {
+                id: "rewrite" as ProcessingStage,
+                label: "Resume rewrite",
+                description: "AI integrates suggestions into a refreshed narrative.",
+            },
+            {
+                id: "pdf" as ProcessingStage,
+                label: "PDF rendering",
+                description: "We typeset the content into a polished layout.",
+            },
+            {
+                id: "store" as ProcessingStage,
+                label: "Secure storage",
+                description: "Enhanced resume uploaded & linked to your report.",
             },
             {
                 id: "complete" as ProcessingStage,
@@ -220,10 +429,88 @@ const Upload = () => {
                             <FileUploader onFileSelect={handleFileSelect} />
                         </div>
 
+                        {existingResumes.length > 0 && (
+                            <div className="space-y-4 rounded-2xl border border-white/50 bg-white/70 p-4 shadow-sm">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-700">
+                                            Or reuse a stored resume
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                            {loadingExisting
+                                                ? "Loading your resume library…"
+                                                : "Skip the upload by selecting a previous scan."}
+                                        </p>
+                                    </div>
+                                    {selectedResumeId && (
+                                        <button
+                                            type="button"
+                                            className="ghost-button px-3 py-1 text-xs"
+                                            onClick={clearExistingSelection}
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                                <select
+                                    value={selectedResumeId}
+                                    onChange={(event) => handleExistingSelection(event.target.value)}
+                                    disabled={loadingExisting}
+                                >
+                                    <option value="">
+                                        {loadingExisting ? "Loading…" : "Choose a stored resume"}
+                                    </option>
+                                    {existingResumes.map((resume) => (
+                                        <option key={resume.id} value={resume.id}>
+                                            {(resume.companyName || "Personal resume") +
+                                                " — " +
+                                                (resume.jobTitle || "General")}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {selectedResume && (
+                                    <div className="existing-resume-preview">
+                                        {existingPreviewUrl ? (
+                                            <img
+                                                src={existingPreviewUrl}
+                                                alt="Stored resume preview"
+                                            />
+                                        ) : (
+                                            <div className="flex h-[140px] w-full items-center justify-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
+                                                Preview loading…
+                                            </div>
+                                        )}
+                                        <div className="space-y-2 text-sm text-slate-600">
+                                            <p className="text-base font-semibold text-slate-900">
+                                                {selectedResume.jobTitle || "Resume"}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {selectedResume.companyName || "Personal resume"}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                                                <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                                                    ATS {selectedResume.feedback?.ATS?.score ?? "--"}/100
+                                                </span>
+                                                <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                                                    Skills {selectedResume.feedback?.skills?.score ?? "--"}/100
+                                                </span>
+                                                {selectedResume.enhancedResume && (
+                                                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
+                                                        Enhanced CV ready
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <button
                             className="primary-button flex items-center justify-center gap-2 px-8 py-3 text-base font-semibold"
                             type="submit"
-                            disabled={!file || isProcessing || isLoading}
+                            disabled={( !file && !selectedResume) || isProcessing || isLoading}
                         >
                             {isProcessing ? "Analyzing…" : "Analyze resume"}
                         </button>

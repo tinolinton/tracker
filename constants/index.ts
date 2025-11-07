@@ -3,6 +3,7 @@ export const resumes: Resume[] = [
         id: "1",
         companyName: "Google",
         jobTitle: "Frontend Developer",
+        jobDescription: "Design and implement responsive UI for complex dashboards.",
         imagePath: "/images/resume-01.png",
         resumePath: "/resumes/resume-1.pdf",
         feedback: {
@@ -82,6 +83,7 @@ export const resumes: Resume[] = [
         id: "2",
         companyName: "Microsoft",
         jobTitle: "Cloud Engineer",
+        jobDescription: "Build resilient Azure infrastructure for enterprise customers.",
         imagePath: "/images/resume-02.png",
         resumePath: "/resumes/resume-2.pdf",
         feedback: {
@@ -162,6 +164,7 @@ export const resumes: Resume[] = [
         id: "3",
         companyName: "Apple",
         jobTitle: "iOS Developer",
+        jobDescription: "Ship App Store ready experiences with SwiftUI.",
         imagePath: "/images/resume-03.png",
         resumePath: "/resumes/resume-3.pdf",
         feedback: {
@@ -296,6 +299,20 @@ interface Feedback {
   };
 }`;
 
+export const UPDATED_RESUME_FORMAT = `
+{
+  "candidateName": string; // inferred from resume
+  "targetRole": string; // combine job title + company if available
+  "summary": string; // 2-3 sentences marketed summary
+  "sections": {
+    "title": string;
+    "bullets": string[]; // 3-6 high-impact bullets using STAR framing
+  }[];
+  "skills": string[]; // grouped technical and soft skills
+  "achievements": string[]; // 3 notable quantified wins
+  "callToAction": string; // 1 sentence closing blurb
+}`.trim();
+
 export const prepareInstructions = ({
                                         jobTitle,
                                         jobDescription,
@@ -317,3 +334,27 @@ export const prepareInstructions = ({
   Provide the feedback using the following format: ${responseFormat}
   Return the analysis as a JSON object, without any other text and without the backticks.
   Do not include any other text or comments.`;
+
+export const prepareResumeRewritePrompt = ({
+                                               jobTitle,
+                                               jobDescription,
+                                               feedbackJSON,
+                                           }: {
+    jobTitle: string;
+    jobDescription: string;
+    feedbackJSON: string;
+}) =>
+    `You are an elite resume writer and ATS optimization expert.
+Use the original resume provided in the file attachment plus the ATS analysis JSON below to craft a polished, ready-to-send resume.
+
+The ATS insights you must address:
+${feedbackJSON}
+
+Requirements:
+- Keep truthful to the original experience but integrate every improvement suggestion that makes sense.
+- Match tone to ${jobTitle} at ${jobDescription ? "a role where: " + jobDescription : "the provided role"}.
+- Use quantified, outcome-focused bullet points and highlight tool stacks explicitly.
+- Format using the JSON schema below so we can turn it into a PDF automatically.
+
+Respond ONLY with JSON (no markdown) that follows this schema:
+${UPDATED_RESUME_FORMAT}`;

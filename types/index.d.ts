@@ -9,9 +9,16 @@ interface Resume {
     id: string;
     companyName?: string;
     jobTitle?: string;
+    jobDescription?: string;
     imagePath: string;
     resumePath: string;
     feedback: Feedback;
+    enhancedResume?: {
+        pdfPath: string;
+        content: GeneratedResume;
+        updatedAt: number;
+        filename: string;
+    };
 }
 
 type FeedbackTip = {
@@ -42,6 +49,21 @@ interface Feedback {
     content: FeedbackCategory;
     structure: FeedbackCategory;
     skills: FeedbackCategory;
+}
+
+interface GeneratedResumeSection {
+    title: string;
+    bullets: string[];
+}
+
+interface GeneratedResume {
+    candidateName?: string;
+    targetRole?: string;
+    summary: string;
+    sections: GeneratedResumeSection[];
+    skills: string[];
+    achievements: string[];
+    callToAction?: string;
 }
 
 declare module "*.mjs?url" {

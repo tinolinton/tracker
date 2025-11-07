@@ -72,6 +72,11 @@ const ResumeCard = ({ resume }: { resume: Resume }) => {
                 <span className="rounded-full bg-slate-100 px-3 py-1">
                     Content: {feedback.content.score}/100
                 </span>
+                {resume.enhancedResume && (
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                        Updated CV ready
+                    </span>
+                )}
             </div>
 
             {priorityFix && (
