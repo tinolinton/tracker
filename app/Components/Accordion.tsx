@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import React, { createContext, useContext, useState } from "react";
+import type { ReactNode, FC } from "react";
+import { createContext, useContext, useState } from "react";
 import { cn } from "../../lib/utils";
 
 interface AccordionContextType {
@@ -27,7 +27,7 @@ interface AccordionProps {
     className?: string;
 }
 
-export const Accordion: React.FC<AccordionProps> = ({
+export const Accordion: FC<AccordionProps> = ({
                                                         children,
                                                         defaultOpen,
                                                         allowMultiple = false,
@@ -66,7 +66,7 @@ interface AccordionItemProps {
     className?: string;
 }
 
-export const AccordionItem: React.FC<AccordionItemProps> = ({
+export const AccordionItem: FC<AccordionItemProps> = ({
                                                                 id,
                                                                 children,
                                                                 className = "",
@@ -86,7 +86,7 @@ interface AccordionHeaderProps {
     iconPosition?: "left" | "right";
 }
 
-export const AccordionHeader: React.FC<AccordionHeaderProps> = ({
+export const AccordionHeader: FC<AccordionHeaderProps> = ({
                                                                     itemId,
                                                                     children,
                                                                     className = "",
@@ -144,7 +144,7 @@ interface AccordionContentProps {
     className?: string;
 }
 
-export const AccordionContent: React.FC<AccordionContentProps> = ({
+export const AccordionContent: FC<AccordionContentProps> = ({
                                                                       itemId,
                                                                       children,
                                                                       className = "",

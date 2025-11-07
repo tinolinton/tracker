@@ -1,8 +1,10 @@
+import type { FC } from "react";
+
 interface ScoreBadgeProps {
     score: number;
 }
 
-const ScoreBadge: React.FC<ScoreBadgeProps> = ({ score }) => {
+const ScoreBadge: FC<ScoreBadgeProps> = ({ score }) => {
     let badgeColor = "";
     let badgeText = "";
 

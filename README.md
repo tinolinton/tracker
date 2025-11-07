@@ -4,11 +4,11 @@ Tracker is an AI-powered workspace for preparing job-ready resumes. It benchmark
 
 ## Features
 
-- **ATS-grade analysis** � Scores overall readiness plus ATS, tone, content, structure, and skill alignment using Claude 3.7 Sonnet.
-- **Smart rewrite** � Produces a refreshed resume PDF that mirrors professional templates (one-click download).
-- **Application email** � Generates a short outreach email aligned with the job and resume summary.
-- **Managed storage** � Puter.js handles authentication, file storage, KV persistence, and AI access; `/wipe` exposes a full workspace management console.
-- **Responsive UI** � Modern desktop dashboard with mobile-first optimizations, glassmorphism styling, and accessible tables.
+- **ATS-grade analysis** Scores overall readiness plus ATS, tone, content, structure, and skill alignment using Claude 3.7 Sonnet.
+- **Smart rewrite** Produces a refreshed resume PDF that mirrors professional templates (one-click download).
+- **Application email** Generates a short outreach email aligned with the job and resume summary.
+- **Managed storage** Puter.js handles authentication, file storage, KV persistence, and AI access; `/wipe` exposes a full workspace management console.
+- **Responsive UI** Modern desktop dashboard with mobile-first optimizations, glassmorphism styling, and accessible tables.
 
 ## Stack
 
@@ -57,18 +57,18 @@ docker run -p 3000:3000 tracker
 
 ## How It Works
 
-1. **Upload & context** � User provides a PDF resume plus company/job info.
-2. **Analysis** � Claude compares the resume to the job description and returns structured JSON feedback.
-3. **Rewrite** � The AI produces an updated resume outline; the app renders it into a polished PDF.
-4. **Email drafting** � A short application email is generated alongside the report.
-5. **Review** � Dashboard cards display scores, detailed tips, ATS insights, enhanced resume preview, and email text.
+1. **Upload & context** User provides a PDF resume plus company/job info.
+2. **Analysis** Claude compares the resume to the job description and returns structured JSON feedback.
+3. **Rewrite** The AI produces an updated resume outline; the app renders it into a polished PDF.
+4. **Email drafting** A short application email is generated alongside the report.
+5. **Review**  Dashboard cards display scores, detailed tips, ATS insights, enhanced resume preview, and email text.
 
 ## Key Routes & Components
 
-- `/` � Home dashboard listing prior scans with score indicators.
-- `/upload` � Guided workflow (drag/drop upload, stored resume reuse, status timeline).
-- `/resume/:id` � Full report (summary, ATS breakdown, details accordion, enhanced PDF, application email).
-- `/wipe` � Manage Puter storage/KV (file explorer, KV inspector, audit log).
+- `/`  Home dashboard listing prior scans with score indicators.
+- `/upload` Guided workflow (drag/drop upload, stored resume reuse, status timeline).
+- `/resume/:id` Full report (summary, ATS breakdown, details accordion, enhanced PDF, application email).
+- `/wipe`  Manage Puter storage/KV (file explorer, KV inspector, audit log).
 
 Notable components: `Summary`, `ATS`, `Details`, `EnhancedResume`, `ApplicationEmail`, `FileUploader`, `ResumeCard`, `Navbar`.
 
