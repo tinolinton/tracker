@@ -1,6 +1,6 @@
 # Tracker
 
-Tracker is an AI-powered workspace for preparing job-ready resumes. It benchmarks a candidate�s resume against a target job description, generates an enhanced PDF, drafts a tailored application email, and is available as a public demo at https://tracker.chimaliro.com (Vercel).
+Tracker is an AI-powered workspace for preparing job-ready resumes. It benchmarks a candidate's resume against a target job description, generates an enhanced PDF, drafts a tailored application email, and is available as a public demo at https://tracker.chimaliro.com (Vercel).
 
 ## Features
 
@@ -33,7 +33,7 @@ Tracker is an AI-powered workspace for preparing job-ready resumes. It benchmark
 ### Local Development
 
 ```bash
-git clone https://github.com/yourusername/tracker.git
+git clone https://github.com/tinolinton/tracker.git
 cd tracker
 npm install
 npm run dev
